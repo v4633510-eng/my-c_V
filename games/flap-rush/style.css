@@ -1,0 +1,43 @@
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:100%;height:100%;overflow:hidden;background:#05060f;
+    font-family:'Segoe UI',system-ui,-apple-system,sans-serif;
+    -webkit-tap-highlight-color:transparent;user-select:none}
+  #wrap{position:fixed;inset:0}
+  canvas{display:block;width:100%;height:100%}
+  #hud{position:absolute;inset:0;pointer-events:none;padding:22px 26px;
+       display:flex;flex-direction:column;align-items:flex-start}
+  #score{font-size:64px;font-weight:900;color:#fff;line-height:1;letter-spacing:-4px;
+         text-shadow:0 0 28px rgba(0,229,255,.9),0 0 70px rgba(0,229,255,.45);
+         transition:transform .12s cubic-bezier(.34,1.56,.64,1)}
+  #score.punch{transform:scale(1.22)}
+  #best{font-size:11px;font-weight:700;letter-spacing:4px;margin-top:10px;
+        color:rgba(255,255,255,.35)}
+  #combo{position:absolute;top:30px;right:26px;font-size:24px;font-weight:900;
+         letter-spacing:1px;color:#ffd93d;opacity:0;transition:all .15s ease;
+         text-shadow:0 0 26px rgba(255,217,61,1)}
+  #combo.punch{transform:scale(1.35)}
+  #coins{position:absolute;top:72px;right:26px;font-size:13px;font-weight:800;
+         letter-spacing:3px;color:rgba(255,217,61,.65)}
+  #speed{position:absolute;top:98px;right:26px;font-size:11px;font-weight:800;
+         letter-spacing:3px;color:rgba(255,154,61,.5);
+         transition:all .3s ease}
+  #speed.pulse{color:#ff9a3d;text-shadow:0 0 14px rgba(255,154,61,.95);
+               transform:scale(1.25)}
+  #overlay{position:absolute;inset:0;display:flex;flex-direction:column;
+    align-items:center;justify-content:center;text-align:center;padding:30px;
+    background:radial-gradient(circle at 50% 45%,rgba(0,0,0,.3),rgba(0,0,0,.88));
+    transition:opacity .22s ease}
+  #overlay.hidden{opacity:0;pointer-events:none}
+  #overlay h1{font-size:48px;font-weight:900;letter-spacing:8px;color:#fff;
+    text-shadow:0 0 34px rgba(0,229,255,.95);margin-bottom:8px}
+  #overlay h1 span{color:#ff2bd6;text-shadow:0 0 34px rgba(255,43,214,.95)}
+  #overlay h2{font-size:86px;font-weight:900;color:#fff;line-height:1;letter-spacing:-4px;
+    text-shadow:0 0 44px rgba(0,229,255,.95)}
+  #overlay .lbl{font-size:11px;letter-spacing:6px;color:rgba(255,255,255,.35);
+    font-weight:700;margin-bottom:8px}
+  #overlay .big{margin-top:30px;font-size:17px;font-weight:800;letter-spacing:4px;
+    color:#00e5ff;text-shadow:0 0 22px rgba(0,229,255,.9);animation:pulse 1.5s ease-in-out infinite}
+  #overlay .sub{margin-top:12px;font-size:13px;letter-spacing:2px;color:rgba(255,255,255,.5)}
+  #overlay .tip{margin-top:26px;font-size:10px;letter-spacing:3px;
+    color:rgba(255,255,255,.25);line-height:2.2}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}

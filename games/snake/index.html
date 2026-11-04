@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>🐍 RẮN SĂN MỒI</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: radial-gradient(circle at 50% 30%, #12203a 0%, #0a0a1a 70%);
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            overflow: hidden;
+            touch-action: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+
+        .game-wrapper {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 16px;
+        }
+
+        h1 {
+            text-align: center;
+            font-size: 26px;
+            letter-spacing: 3px;
+            color: #00ff00;
+            text-shadow: 0 0 10px #00ff00, 0 0 22px rgba(0, 255, 0, 0.45);
+        }
+
+        /* HUD */
+        #hud {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 14px;
+            font-size: 15px;
+            letter-spacing: 1px;
+            background: rgba(0, 0, 0, 0.5);
+            border: 1px solid rgba(0, 255, 0, 0.4);
+            border-radius: 8px;
+            padding: 8px 14px;
+        }
+
+        #hud span {
+            font-weight: bold;
+        }
+
+        #score {
+            color: #00ff88;
+        }
+
+        #highScore {
+            color: #ffcc00;
+        }
+
+        #level {
+            color: #00d0ff;
+        }
+
+        /* Playfield */
+        #game {
+            display: block;
+            background: #050510;
+            border: 2px solid #00ff00;
+            border-radius: 10px;
+            box-shadow: 0 0 25px rgba(0, 255, 0, 0.35);
+            max-width: 92vw;
+            max-height: 92vw;
+        }
+
+        .hint {
+            text-align: center;
+            font-size: 12px;
+            letter-spacing: 1px;
+            color: #6f8f6f;
+        }
+
+        /* Start / pause / game-over overlay */
+        #overlay {
+            position: fixed;
+            inset: 0;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            gap: 14px;
+            background: rgba(5, 5, 16, 0.86);
+            text-align: center;
+            padding: 24px;
+            z-index: 10;
+        }
+
+        #overlay.hidden {
+            display: none;
+        }
+
+        #overlay h2 {
+            font-size: 30px;
+            letter-spacing: 2px;
+            color: #00ff00;
+            text-shadow: 0 0 10px #00ff00;
+        }
+
+        #overlay p {
+            max-width: 340px;
+            font-size: 14px;
+            line-height: 1.7;
+            color: #b8c7b8;
+        }
+
+        #startBtn {
+            background: #00ff00;
+            color: #0a0a1a;
+            border: none;
+            padding: 12px 40px;
+            font-family: inherit;
+            font-size: 17px;
+            font-weight: bold;
+            letter-spacing: 2px;
+            cursor: pointer;
+            border-radius: 6px;
+            box-shadow: 0 0 18px rgba(0, 255, 0, 0.6);
+            transition: transform 0.12s ease, background 0.2s ease;
+        }
+
+        #startBtn:hover {
+            background: #00e600;
+            transform: scale(1.04);
+        }
+
+        #startBtn:active {
+            transform: scale(0.97);
+        }
+    </style>
+</head>
+<body>
+    <div class="game-wrapper">
+        <h1>🐍 RẮN SĂN MỒI</h1>
+
+        <div id="hud">
+            <div>ĐIỂM <span id="score">0</span></div>
+            <div>KỶ LỤC <span id="highScore">0</span></div>
+            <div>CẤP <span id="level">1</span></div>
+        </div>
+
+        <canvas id="game" width="440" height="440"></canvas>
+
+        <p class="hint">MŨI TÊN / WASD di chuyển • SPACE tạm dừng • R chơi lại</p>
+    </div>
+
+    <div id="overlay">
+        <h2 id="overlayTitle">SẴN SÀNG?</h2>
+        <p id="overlayText">Dùng phím mũi tên hoặc WASD để điều khiển chú rắn.<br>Ăn táo 🍎 để lớn lên — đừng đụng tường hay cắn vào thân mình!</p>
+        <button id="startBtn">BẮT ĐẦU</button>
+    </div>
+
+    <script>
+        // --- Element references ---
+        const canvas = document.getElementById('game');
+        const ctx = canvas.getContext('2d');
+        const scoreEl = document.getElementById('score');
+        const highScoreEl = document.getElementById('highScore');
+        const levelEl = document.getElementById('level');
+        const overlay = document.getElementById('overlay');
+        const overlayTitle = document.getElementById('overlayTitle');
+        const overlayText = document.getElementById('overlayText');
+        const startBtn = document.getElementById('startBtn');
+
+        // --- Grid configuration ---
+        const CELL = 20;                    // pixel size of one grid cell
+        const COLS = canvas.width / CELL;   // number of columns (22)
+        const ROWS = canvas.height / CELL;  // number of rows (22)
+        const BASE_SPEED = 140;             // ms per move at level 1
+        const MIN_SPEED = 60;               // fastest allowed step time
+        const FOODS_PER_LEVEL = 5;          // foods needed to reach next level
+        const POINTS_PER_FOOD = 10;
+
+        // --- Game state ---
+        let snake = [];                     // cells occupied by the snake (head first)
+        let dir = { x: 1, y: 0 };           // direction the snake is moving
+        let nextDir = { x: 1, y: 0 };       // direction requested by the player
+        let food = { x: 0, y: 0 };
+        let score = 0;
+        let level = 1;
+        let foodsEaten = 0;
+        let moveInterval = BASE_SPEED;
+        let accumulator = 0;
+        let lastTime = 0;
+        let running = false;
+        let paused = false;
+        let gameOver = false;
+        let particles = [];
+        let foodPulse = 0;
+        let highScore = Number(localStorage.getItem('snakeHighScore') || 0);
+
+        highScoreEl.textContent = highScore;
+
+        // --- Build the starting snake in the middle of the board ---
+        function resetSnake() {
+            const startX = Math.floor(COLS / 2);
+            const startY = Math.floor(ROWS / 2);
+
+            snake = [
+                { x: startX, y: startY },
+                { x: startX - 1, y: startY },
+                { x: startX - 2, y: startY }
+            ];
+        }
+
+        // --- Start a brand new game ---
+        function startGame() {
+            resetSnake();
+            dir = { x: 1, y: 0 };
+            nextDir = { x: 1, y: 0 };
+            score = 0;
+            level = 1;
+            foodsEaten = 0;
+            moveInterval = BASE_SPEED;
+            accumulator = 0;
+            particles = [];
+            paused = false;
+            gameOver = false;
+            running = true;
+
+            scoreEl.textContent = score;
+            levelEl.textContent = level;
+            startBtn.textContent = 'BẮT ĐẦU';
+
+            spawnFood();
+            hideOverlay();
+        }
+
+        // --- Put the food on a random empty cell ---
+        function spawnFood() {
+            const free = [];
+            for (let y = 0; y < ROWS; y++) {
+                for (let x = 0; x < COLS; x++) {
+                    if (!snake.some(s => s.x === x && s.y === y)) {
+                        free.push({ x, y });
+                    }
+                }
+            }
+
+            if (free.length === 0) {
+                endGame(true);      // board completely filled -> perfect win
+                return;
+            }
+            food = free[Math.floor(Math.random() * free.length)];
+        }
+
+        // --- Advance the snake one cell ---
+        function step() {
+            // apply the queued direction, never allowing a 180° turn
+            if (nextDir.x !== -dir.x || nextDir.y !== -dir.y) {
+                dir = nextDir;
+            }
+
+            const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
+
+            // wall collision
+            if (head.x < 0 || head.x >= COLS || head.y < 0 || head.y >= ROWS) {
+                endGame(false);
+                return;
+            }
+
+            const willEat = (head.x === food.x && head.y === food.y);
+
+            // self collision (the tail cell frees up unless the snake is growing)
+            const body = willEat ? snake : snake.slice(0, -1);
+            if (body.some(s => s.x === head.x && s.y === head.y)) {
+                endGame(false);
+                return;
+            }
+
+            snake.unshift(head);
+
+            if (willEat) {
+                score += POINTS_PER_FOOD;
+                foodsEaten++;
+                scoreEl.textContent = score;
+                spawnParticles(head.x, head.y);
+                maybeLevelUp();
+                spawnFood();
+            } else {
+                snake.pop();
+            }
+        }
+
+        // --- Speed up a little every few foods ---
+        function maybeLevelUp() {
+            if (foodsEaten % FOODS_PER_LEVEL !== 0) {
+                return;
+            }
+            level++;
+            moveInterval = Math.max(MIN_SPEED, BASE_SPEED - (level - 1) * 10);
+            levelEl.textContent = level;
+        }
+
+        // --- Finish the game and show the overlay ---
+        function endGame(won) {
+            running = false;
+            gameOver = true;
+
+            if (score > highScore) {
+                highScore = score;
+                localStorage.setItem('snakeHighScore', highScore);
+                highScoreEl.textContent = highScore;
+            }
+
+            overlayTitle.textContent = won ? '🏆 HOÀN HẢO!' : '💀 GAME OVER';
+            overlayText.innerHTML =
+                'Điểm của bạn: <strong style="color:#00ff88">' + score + '</strong><br>' +
+                'Kỷ lục: <strong style="color:#ffcc00">' + highScore + '</strong> • Cấp ' + level;
+            startBtn.textContent = 'CHƠI LẠI';
+            showOverlay();
+        }
+
+        // --- Overlay helpers ---
+        function showOverlay() {
+            overlay.classList.remove('hidden');
+        }
+
+        function hideOverlay() {
+            overlay.classList.add('hidden');
+        }
+
+        // --- Pause / resume with the space bar ---
+        function togglePause() {
+            if (!running || gameOver) {
+                return;
+            }
+            paused = !paused;
+
+            if (paused) {
+                overlayTitle.textContent = '⏸ TẠM DỪNG';
+                overlayText.textContent = 'Nhấn SPACE để tiếp tục chơi';
+                startBtn.textContent = 'TIẾP TỤC';
+                showOverlay();
+            } else {
+                hideOverlay();
+            }
+        }
+
+        // --- Particle burst when the snake eats ---
+        function spawnParticles(gx, gy) {
+            const cx = gx * CELL + CELL / 2;
+            const cy = gy * CELL + CELL / 2;
+
+            for (let i = 0; i < 12; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = 0.05 + Math.random() * 0.12;
+                particles.push({
+                    x: cx,
+                    y: cy,
+                    vx: Math.cos(angle) * speed,
+                    vy: Math.sin(angle) * speed,
+                    life: 1,
+                    size: 2 + Math.random() * 3
+                });
+            }
+        }
+
+        function updateParticles(dt) {
+            particles.forEach(p => {
+                p.x += p.vx * dt;
+                p.y += p.vy * dt;
+                p.life -= dt / 600;
+            });
+            particles = particles.filter(p => p.life > 0);
+        }
+
+        // --- Rounded rectangle helper ---
+        function roundRect(x, y, w, h, r) {
+            ctx.beginPath();
+            ctx.moveTo(x + r, y);
+            ctx.arcTo(x + w, y, x + w, y + h, r);
+            ctx.arcTo(x + w, y + h, x, y + h, r);
+            ctx.arcTo(x, y + h, x, y, r);
+            ctx.arcTo(x, y, x + w, y, r);
+            ctx.closePath();
+        }
+
+        // --- Draw everything for the current frame ---
+        function draw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            drawGrid();
+            drawFood();
+            drawSnake();
+            drawParticles();
+
+            if (paused && running && !gameOver) {
+                ctx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+        }
+
+        function drawGrid() {
+            ctx.strokeStyle = 'rgba(0, 255, 0, 0.07)';
+            ctx.lineWidth = 1;
+
+            for (let x = 1; x < COLS; x++) {
+                ctx.beginPath();
+                ctx.moveTo(x * CELL, 0);
+                ctx.lineTo(x * CELL, canvas.height);
+                ctx.stroke();
+            }
+            for (let y = 1; y < ROWS; y++) {
+                ctx.beginPath();
+                ctx.moveTo(0, y * CELL);
+                ctx.lineTo(canvas.width, y * CELL);
+                ctx.stroke();
+            }
+        }
+
+        function drawFood() {
+            foodPulse += 0.08;
+
+            const cx = food.x * CELL + CELL / 2;
+            const cy = food.y * CELL + CELL / 2;
+            const pulse = 1 + Math.sin(foodPulse) * 0.12;
+            const radius = (CELL / 2 - 3) * pulse;
+
+            // soft red glow
+            const glow = ctx.createRadialGradient(cx, cy, 1, cx, cy, CELL);
+            glow.addColorStop(0, 'rgba(255, 80, 80, 0.85)');
+            glow.addColorStop(1, 'rgba(255, 0, 0, 0)');
+            ctx.fillStyle = glow;
+            ctx.beginPath();
+            ctx.arc(cx, cy, CELL, 0, Math.PI * 2);
+            ctx.fill();
+
+            // apple body
+            const apple = ctx.createRadialGradient(cx - 3, cy - 3, 1, cx, cy, radius);
+            apple.addColorStop(0, '#ff9a9a');
+            apple.addColorStop(1, '#e01b1b');
+            ctx.fillStyle = apple;
+            ctx.beginPath();
+            ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+            ctx.fill();
+
+            // little leaf on top
+            ctx.fillStyle = '#3dff6e';
+            ctx.beginPath();
+            ctx.ellipse(cx + 4, cy - radius, 3.2, 1.7, Math.PI / 4, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        function drawSnake() {
+            const total = snake.length;
+
+            snake.forEach((seg, i) => {
+                const t = total > 1 ? i / (total - 1) : 0;   // 0 = head, 1 = tail
+                const pad = i === 0 ? 1 : 2;
+
+                // colour fades from a bright head to a darker tail
+                const green = Math.round(255 - t * 130);
+                const red = Math.round(30 - t * 25);
+                const blue = Math.round(95 - t * 65);
+
+                ctx.fillStyle = 'rgb(' + red + ', ' + green + ', ' + blue + ')';
+                ctx.shadowColor = 'rgba(0, 255, 0, 0.8)';
+                ctx.shadowBlur = i === 0 ? 16 : 6;
+
+                roundRect(seg.x * CELL + pad, seg.y * CELL + pad, CELL - pad * 2, CELL - pad * 2, 6);
+                ctx.fill();
+            });
+
+            ctx.shadowBlur = 0;
+            drawEyes();
+        }
+
+        function drawEyes() {
+            const head = snake[0];
+            if (!head) {
+                return;
+            }
+
+            const cx = head.x * CELL + CELL / 2;
+            const cy = head.y * CELL + CELL / 2;
+            const forward = CELL / 5;      // offset toward the mouth
+            const side = CELL / 5;         // offset to each side of the head
+
+            const eyes = [
+                { x: cx + dir.x * forward - dir.y * side, y: cy + dir.y * forward - dir.x * side },
+                { x: cx + dir.x * forward + dir.y * side, y: cy + dir.y * forward + dir.x * side }
+            ];
+
+            eyes.forEach(eye => {
+                ctx.fillStyle = '#ffffff';
+                ctx.beginPath();
+                ctx.arc(eye.x, eye.y, 2.7, 0, Math.PI * 2);
+                ctx.fill();
+
+                ctx.fillStyle = '#0a0a1a';
+                ctx.beginPath();
+                ctx.arc(eye.x + dir.x, eye.y + dir.y, 1.4, 0, Math.PI * 2);
+                ctx.fill();
+            });
+        }
+
+        function drawParticles() {
+            particles.forEach(p => {
+                ctx.globalAlpha = Math.max(0, p.life);
+                ctx.fillStyle = '#7dff9b';
+                ctx.beginPath();
+                ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+                ctx.fill();
+            });
+            ctx.globalAlpha = 1;
+        }
+
+        // --- Main loop: requestAnimationFrame + fixed timestep ---
+        function loop(now) {
+            requestAnimationFrame(loop);
+
+            if (!lastTime) {
+                lastTime = now;
+            }
+            const dt = now - lastTime;
+            lastTime = now;
+
+            if (running && !paused && !gameOver) {
+                accumulator += dt;
+
+                while (accumulator >= moveInterval) {
+                    accumulator -= moveInterval;
+                    step();
+                    if (gameOver) {
+                        break;
+                    }
+                }
+                updateParticles(dt);
+            }
+
+            draw();
+        }
+
+        // --- Keyboard controls ---
+        const KEYS = {
+            arrowup: { x: 0, y: -1 }, w: { x: 0, y: -1 },
+            arrowdown: { x: 0, y: 1 }, s: { x: 0, y: 1 },
+            arrowleft: { x: -1, y: 0 }, a: { x: -1, y: 0 },
+            arrowright: { x: 1, y: 0 }, d: { x: 1, y: 0 }
+        };
+
+        document.addEventListener('keydown', (e) => {
+            const key = e.key.toLowerCase();
+
+            if (KEYS[key]) {
+                e.preventDefault();
+                nextDir = KEYS[key];
+                return;
+            }
+
+            if (e.key === ' ') {
+                e.preventDefault();
+                togglePause();
+                return;
+            }
+
+            if (key === 'r') {
+                startGame();
+            }
+        });
+
+        // --- Touch / swipe controls ---
+        let touchStart = null;
+
+        canvas.addEventListener('touchstart', (e) => {
+            const t = e.changedTouches[0];
+            touchStart = { x: t.clientX, y: t.clientY };
+        }, { passive: true });
+
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();       // stop the page from scrolling while playing
+        }, { passive: false });
+
+        canvas.addEventListener('touchend', (e) => {
+            if (!touchStart) {
+                return;
+            }
+
+            const t = e.changedTouches[0];
+            const dx = t.clientX - touchStart.x;
+            const dy = t.clientY - touchStart.y;
+            touchStart = null;
+
+            if (Math.abs(dx) < 24 && Math.abs(dy) < 24) {
+                return;               // treat a small move as a tap
+            }
+
+            if (Math.abs(dx) > Math.abs(dy)) {
+                nextDir = { x: dx > 0 ? 1 : -1, y: 0 };
+            } else {
+                nextDir = { x: 0, y: dy > 0 ? 1 : -1 };
+            }
+        }, { passive: true });
+
+        // --- Overlay button: start, restart or resume ---
+        startBtn.addEventListener('click', () => {
+            if (paused && running && !gameOver) {
+                togglePause();        // resume the paused game
+            } else {
+                startGame();
+            }
+        });
+
+        // --- Boot ---
+        resetSnake();                 // show a snake behind the start screen
+        food = { x: Math.floor(COLS / 2) + 4, y: Math.floor(ROWS / 2) };
+        draw();
+        requestAnimationFrame(loop);
+    </script>
+</body>
+</html>

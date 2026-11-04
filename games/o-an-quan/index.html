@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="Ô ăn quan — trò chơi dân gian Việt Nam trong portfolio.">
+  <title>Ô ăn quan · Đang phát triển</title>
+  <style>
+    :root {
+      --bg: #0b0703;
+      --panel: rgba(30, 20, 10, .72);
+      --line: rgba(255, 190, 90, .2);
+      --text: #fff4e2;
+      --muted: #c5a986;
+      --gold: #fbbf24;
+      --orange: #fb923c;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      padding: 24px;
+      background:
+        radial-gradient(circle at 15% 20%, rgba(251, 146, 60, .16), transparent 45%),
+        radial-gradient(circle at 85% 80%, rgba(251, 191, 36, .12), transparent 45%),
+        var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    }
+    .card {
+      width: min(620px, 100%);
+      padding: 40px 32px;
+      border: 1px solid var(--line);
+      border-radius: 24px;
+      background: var(--panel);
+      backdrop-filter: blur(16px);
+      box-shadow: 0 30px 80px rgba(0, 0, 0, .5);
+      text-align: center;
+    }
+    .icon {
+      width: 84px;
+      height: 84px;
+      margin: 0 auto 22px;
+      display: grid;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      font-size: 40px;
+      background: linear-gradient(145deg, rgba(251, 146, 60, .16), rgba(251, 191, 36, .12));
+      animation: bob 4s ease-in-out infinite;
+    }
+    @keyframes bob { 50% { transform: translateY(-8px) rotate(4deg); } }
+    .tag {
+      display: inline-block;
+      margin-bottom: 14px;
+      padding: 7px 14px;
+      border: 1px solid rgba(251, 191, 36, .38);
+      border-radius: 999px;
+      color: var(--gold);
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 2.5px;
+      text-transform: uppercase;
+    }
+    h1 {
+      font-size: clamp(28px, 5vw, 40px);
+      line-height: 1.15;
+      letter-spacing: -.5px;
+    }
+    h1 span {
+      background: linear-gradient(90deg, var(--orange), var(--gold));
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+    p {
+      margin: 16px auto 0;
+      max-width: 460px;
+      color: var(--muted);
+      font-size: 15px;
+      line-height: 1.7;
+    }
+    .actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      justify-content: center;
+      margin-top: 30px;
+    }
+    a {
+      padding: 12px 20px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      color: var(--text);
+      text-decoration: none;
+      font-size: 14px;
+      font-weight: 600;
+      transition: transform .18s ease, border-color .18s ease, background .18s ease;
+    }
+    a:hover { transform: translateY(-2px); border-color: rgba(251, 191, 36, .55); }
+    a.primary {
+      border-color: transparent;
+      background: linear-gradient(90deg, #f97316, #facc15);
+      color: #2a1603;
+    }
+    .links { margin-top: 24px; color: var(--muted); font-size: 12px; line-height: 2; }
+    .links a {
+      display: inline;
+      padding: 0;
+      border: 0;
+      background: none;
+      color: var(--gold);
+      font-size: inherit;
+    }
+  </style>
+</head>
+<body>
+  <main class="card">
+    <div class="icon" aria-hidden="true">🪨</div>
+    <div class="tag">Đang phát triển</div>
+    <h1>Ô ăn quan <span>dân gian</span></h1>
+    <p>
+      Bàn ô 10 dân, 2 quan và cách rải sỏi đang được lập trình.
+      Một chút kiên nhẫn để chơi bản hoàn chỉnh nhé!
+    </p>
+    <div class="actions">
+      <a class="primary" href="../../index.html">← Về trang CV</a>
+      <a href="../flap-rush/">Chơi Flap Rush</a>
+      <a href="../snake/">Chơi Rắn săn mồi</a>
+    </div>
+    <div class="links">
+      Các game khác:
+      <a href="../chess/">Cờ tướng</a> ·
+      <a href="../snake/">Rắn săn mồi</a>
+    </div>
+  </main>
+</body>
+</html>
