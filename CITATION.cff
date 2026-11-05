@@ -1,0 +1,12 @@
+cff-version: 1.2.0
+title: "Portfolio Game Developer - Nguyễn Văn An"
+message: "Nếu bạn sử dụng mã nguồn này, vui lòng trích dẫn nó như dưới đây."
+type: software
+authors:
+  - family-names: "Nguyễn"
+    given-names: "Văn An"
+    orcid: "https://orcid.org/0000-0000-0000-0000" # Thay bằng mã ORCID của bạn nếu có
+repository-code: "https://github.com/v4633510-eng/portfolio"
+url: "https://github.com/v4633510-eng"
+license: MIT
+year: 2026
