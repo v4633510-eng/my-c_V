@@ -1,0 +1,25 @@
+name: Create Release from Changelog
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+' # Kích hoạt khi push tag có định dạng v1.0.0, v2.3.1, ...
+
+permissions:
+  contents: write # Cần quyền này để tạo Release
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Create Release
+        uses: docker://antonyurchenko/git-release:latest
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          args: | # (Tùy chọn) Liệt kê các file build artifact bạn muốn đính kèm vào Release
+            # build/*.zip
+            # dist/*.tar.gz
