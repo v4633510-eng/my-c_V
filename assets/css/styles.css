@@ -139,6 +139,7 @@ ul {
 }
 
 .section-title {
+  color: #FFD700;
   position: relative;
   padding-bottom: 0.65rem;
   font-size: var(--fs-h2);
@@ -206,6 +207,7 @@ ul {
 }
 
 .brand-name {
+  color: #FFD700;
   font-size: 1.02rem;
   letter-spacing: 0.01em;
 }
@@ -308,6 +310,7 @@ ul {
 }
 
 .hero-title {
+  color: #FFD700;
   font-size: var(--fs-h1);
   font-weight: 800;
   line-height: 1.12;
@@ -502,6 +505,7 @@ ul {
 }
 
 .card-title {
+  color: #FFD700;
   font-size: var(--fs-lg);
   font-weight: 800;
   line-height: 1.35;
