@@ -128,4 +128,14 @@ text
 
 Dưới đây là giao diện màn hình chính:
 
-![Giao diện trang chủ](docs/screenshots/home.png)
+![Giao diện trang chủ](docs/screenshots/home.png)# Báo cáo kiểm thử (Test Report)
+- **Ngày kiểm thử:** [Ngày hôm nay]
+- **Môi trường:** Chrome Desktop, Safari Mobile
+- **URL Live Demo:** https://v4633510-eng.github.io/my-c_V/
+
+## Danh sách Test Cases
+| STT | Chức năng | Kết quả mong đợi | Trạng thái |
+|---|---|---|---|
+| 1 | Tải trang chủ | Hiển thị đầy đủ giao diện, không lỗi 404 | Pass |
+| 2 | Chuyển tab / Cuộn trang | Hoạt động mượt mà | Pass |
+| 3 | Bấm vào Game 1 | Game load và chơi được | Pass |
