@@ -67,7 +67,6 @@ Dự án được tổ chức theo mô hình Module, giúp dễ dàng bảo trì
     bash
 
     git clone https://github.com/your-username/your-repo-name.git
-
     Mở thư mục dự án:
     bash
 
