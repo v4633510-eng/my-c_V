@@ -1,1047 +1,238 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Snake IO · Neon Garden</title>
-<style>
-  /* ==========================================================
-     BIẾN MÀU & RESET
-     ========================================================== */
-  :root {
-    --mint: #5EEAD4;
-    --cyan: #38BDF8;
-    --coral: #FF7A6B;
-    --sun: #FFD166;
-    --text: #E9FFFB;
-    --muted: #8FB8C8;
-    --panel: rgba(7, 24, 34, 0.72);
-    --line: rgba(94, 234, 212, 0.16);
-    --font: "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, Roboto,
-      Helvetica, Arial, sans-serif;
-  }
-
-  *,
-  *::before,
-  *::after {
-    box-sizing: border-box;
-  }
-
-  html,
-  body {
-    height: 100%;
-  }
-
-  body {
-    margin: 0;
-    overflow: hidden;
-    background: #031018;
-    color: var(--text);
-    font-family: var(--font);
-    user-select: none;
-    -webkit-user-select: none;
-    -webkit-tap-highlight-color: transparent;
-    overscroll-behavior: none;
-  }
-
-  .hidden {
-    display: none !important;
-  }
-
-  /* ==========================================================
-     CANVAS + HIỆU ỨNG NỀN
-     ========================================================== */
-  #game {
-    position: fixed;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    display: block;
-    cursor: crosshair;
-    touch-action: none;
-  }
-
-  .vignette {
-    position: fixed;
-    inset: 0;
-    z-index: 3;
-    pointer-events: none;
-    background: radial-gradient(
-      ellipse at center,
-      transparent 45%,
-      rgba(2, 8, 13, 0.68) 100%
-    );
-  }
-
-  /* ==========================================================
-     HUD
-     ========================================================== */
-  .ui {
-    position: fixed;
-    inset: 0;
-    z-index: 10;
-    pointer-events: none;
-  }
-
-  .glass {
-    background: linear-gradient(
-      160deg,
-      rgba(10, 33, 46, 0.78),
-      rgba(5, 18, 27, 0.62)
-    );
-    border: 1px solid var(--line);
-    box-shadow: 0 16px 40px rgba(0, 0, 0, 0.32);
-    -webkit-backdrop-filter: blur(14px);
-    backdrop-filter: blur(14px);
-  }
-
-  .hud-top-left {
-    position: absolute;
-    top: 18px;
-    left: 18px;
-    display: flex;
-    align-items: stretch;
-    gap: 10px;
-  }
-
-  .stats-card {
-    display: flex;
-    align-items: center;
-    gap: 16px;
-    padding: 9px 16px;
-    border-radius: 14px;
-  }
-
-  .stat {
-    display: flex;
-    flex-direction: column;
-    line-height: 1.1;
-  }
-
-  .stat-label {
-    margin-bottom: 3px;
-    color: #7FB6C8;
-    font-size: 0.58rem;
-    font-weight: 800;
-    letter-spacing: 0.16em;
-  }
-
-  .stat-value {
-    color: #EFFFFB;
-    font-size: 1.45rem;
-    font-weight: 900;
-    letter-spacing: -0.02em;
-    font-variant-numeric: tabular-nums;
-    text-shadow: 0 0 18px rgba(94, 234, 212, 0.25);
-  }
-
-  .stat-divider {
-    width: 1px;
-    height: 30px;
-    background: rgba(255, 255, 255, 0.1);
-  }
-
-  .icon-btn {
-    width: 44px;
-    border: 1px solid var(--line);
-    border-radius: 13px;
-    background: var(--panel);
-    color: var(--text);
-    font-size: 1.1rem;
-    cursor: pointer;
-    pointer-events: auto;
-    -webkit-backdrop-filter: blur(12px);
-    backdrop-filter: blur(12px);
-    transition: transform 0.15s ease, background 0.15s ease;
-  }
-
-  .icon-btn:hover {
-    background: rgba(14, 45, 60, 0.9);
-    transform: translateY(-1px);
-  }
-
-  /* Bảng xếp hạng */
-  .leaderboard {
-    position: absolute;
-    top: 18px;
-    right: 18px;
-    width: 238px;
-    padding: 12px 14px;
-    border-radius: 16px;
-  }
-
-  .leaderboard h3 {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    margin: 0 0 10px;
-    color: #8FD9E8;
-    font-size: 0.64rem;
-    font-weight: 800;
-    letter-spacing: 0.14em;
-    text-transform: uppercase;
-  }
-
-  .leaderboard ol {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    margin: 0;
-    padding: 0;
-    list-style: none;
-  }
-
-  .leaderboard li {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    padding: 5px 7px;
-    border-radius: 8px;
-    color: #BFD8E2;
-    font-size: 0.8rem;
-    transition: background 0.2s ease;
-  }
-
-  .leaderboard li.me {
-    background: rgba(94, 234, 212, 0.12);
-    color: #E9FFFB;
-  }
-
-  .leaderboard .rank {
-    width: 16px;
-    color: #6E9AAA;
-    font-weight: 800;
-    text-align: right;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .leaderboard .dot {
-    width: 8px;
-    height: 8px;
-    flex: 0 0 auto;
-    border-radius: 50%;
-    box-shadow: 0 0 6px currentColor;
-  }
-
-  .leaderboard .name {
-    flex: 1;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-
-  .leaderboard .pts {
-    color: #8FE9D8;
-    font-weight: 800;
-    font-variant-numeric: tabular-nums;
-  }
-
-  /* Minimap */
-  .minimap-wrap {
-    position: absolute;
-    left: 18px;
-    bottom: 18px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 6px;
-  }
-
-  #minimap {
-    width: 154px;
-    height: 154px;
-    border: 1px solid rgba(94, 234, 212, 0.2);
-    border-radius: 18px;
-    background: rgba(4, 16, 24, 0.55);
-    box-shadow: 0 14px 34px rgba(0, 0, 0, 0.35),
-      inset 0 0 30px rgba(56, 189, 248, 0.05);
-    -webkit-backdrop-filter: blur(8px);
-    backdrop-filter: blur(8px);
-  }
-
-  .minimap-label {
-    color: #6FA3B6;
-    font-size: 0.55rem;
-    font-weight: 800;
-    letter-spacing: 0.2em;
-  }
-
-  /* Gợi ý điều khiển */
-  .hint {
-    position: absolute;
-    right: 18px;
-    bottom: 18px;
-    display: flex;
-    align-items: center;
-    gap: 14px;
-    padding: 10px 14px;
-    border-radius: 12px;
-    color: #9CC4D2;
-    font-size: 0.75rem;
-  }
-
-  kbd {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-width: 26px;
-    height: 24px;
-    padding: 0 7px;
-    border: 1px solid rgba(255, 255, 255, 0.14);
-    border-bottom-width: 2px;
-    border-radius: 6px;
-    background: rgba(255, 255, 255, 0.07);
-    color: #D9F5FC;
-    font-family: inherit;
-    font-size: 0.68rem;
-    font-weight: 700;
-  }
-
-  /* Nút boost cho thiết bị cảm ứng */
-  .boost-btn {
-    position: absolute;
-    right: 20px;
-    bottom: 22px;
-    display: none;
-    align-items: center;
-    justify-content: center;
-    width: 76px;
-    height: 76px;
-    border: 1px solid rgba(94, 234, 212, 0.5);
-    border-radius: 50%;
-    background: radial-gradient(
-      circle at 30% 30%,
-      rgba(94, 234, 212, 0.35),
-      rgba(8, 26, 37, 0.92)
-    );
-    color: #CFFFF5;
-    font-size: 1.7rem;
-    pointer-events: auto;
-    cursor: pointer;
-    touch-action: none;
-    user-select: none;
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4),
-      0 0 30px rgba(94, 234, 212, 0.2);
-  }
-
-  .boost-btn.active {
-    transform: scale(0.94);
-    background: radial-gradient(
-      circle at 30% 30%,
-      rgba(255, 209, 102, 0.55),
-      rgba(30, 20, 8, 0.92)
-    );
-  }
-
-  /* ==========================================================
-     OVERLAY / MODAL
-     ========================================================== */
-  .overlay {
-    position: fixed;
-    inset: 0;
-    z-index: 30;
-    display: grid;
-    place-items: center;
-    padding: 20px;
-    background: radial-gradient(
-      1200px 800px at 50% 28%,
-      rgba(10, 45, 60, 0.5),
-      rgba(2, 10, 16, 0.84)
-    );
-    -webkit-backdrop-filter: blur(10px);
-    backdrop-filter: blur(10px);
-  }
-
-  .modal {
-    position: relative;
-    width: min(560px, 100%);
-    max-height: 92dvh;
-    overflow-y: auto;
-    padding: clamp(26px, 5vw, 46px) clamp(20px, 5vw, 42px);
-    border: 1px solid rgba(94, 234, 212, 0.22);
-    border-radius: 28px;
-    background: linear-gradient(
-      160deg,
-      rgba(14, 45, 60, 0.95),
-      rgba(5, 18, 27, 0.98)
-    );
-    box-shadow: 0 30px 100px rgba(0, 0, 0, 0.65),
-      inset 0 1px 0 rgba(255, 255, 255, 0.08);
-    text-align: center;
-    scrollbar-width: none;
-  }
-
-  .modal::-webkit-scrollbar {
-    display: none;
-  }
-
-  .modal::before {
-    content: "";
-    position: absolute;
-    inset: -40% -20% auto;
-    height: 240px;
-    background: radial-gradient(
-      ellipse at center,
-      rgba(56, 189, 248, 0.22),
-      transparent 70%
-    );
-    pointer-events: none;
-  }
-
-  .modal::after {
-    content: "";
-    position: absolute;
-    top: 0;
-    left: 12%;
-    right: 12%;
-    height: 1px;
-    background: linear-gradient(
-      90deg,
-      transparent,
-      rgba(94, 234, 212, 0.8),
-      transparent
-    );
-  }
-
-  .modal > * {
-    position: relative;
-    z-index: 1;
-  }
-
-  .modal-sm {
-    width: min(420px, 100%);
-  }
-
-  .logo {
-    margin: 0;
-    font-size: clamp(3.1rem, 10vw, 5rem);
-    font-weight: 900;
-    line-height: 0.92;
-    letter-spacing: -0.05em;
-    color: #F0FFFC;
-    text-shadow: 0 0 38px rgba(94, 234, 212, 0.32);
-    animation: logoGlow 4s ease-in-out infinite;
-  }
-
-  .logo span {
-    background: linear-gradient(135deg, var(--mint), var(--cyan));
-    -webkit-background-clip: text;
-    background-clip: text;
-    color: transparent;
-  }
-
-  @keyframes logoGlow {
-    0%,
-    100% {
-      text-shadow: 0 0 26px rgba(94, 234, 212, 0.25);
-    }
-    50% {
-      text-shadow: 0 0 48px rgba(94, 234, 212, 0.5);
-    }
-  }
-
-  .tagline {
-    margin: 14px 0 0;
-    color: #8FC5D5;
-    font-size: 0.7rem;
-    font-weight: 700;
-    letter-spacing: 0.18em;
-  }
-
-  .btn-main {
-    margin-top: 26px;
-    padding: 15px 46px;
-    border: none;
-    border-radius: 999px;
-    background: linear-gradient(135deg, var(--mint), var(--cyan));
-    color: #032027;
-    font-family: inherit;
-    font-size: 0.95rem;
-    font-weight: 900;
-    letter-spacing: 0.12em;
-    cursor: pointer;
-    pointer-events: auto;
-    box-shadow: 0 14px 34px rgba(56, 189, 248, 0.35),
-      inset 0 1px 0 rgba(255, 255, 255, 0.6);
-    transition: transform 0.18s ease, box-shadow 0.18s ease;
-  }
-
-  .btn-main:hover {
-    transform: translateY(-2px) scale(1.02);
-    box-shadow: 0 20px 44px rgba(56, 189, 248, 0.45);
-  }
-
-  .btn-main:active {
-    transform: translateY(0) scale(0.99);
-  }
-
-  .btn-ghost {
-    display: block;
-    width: fit-content;
-    margin: 12px auto 0;
-    padding: 11px 28px;
-    border: 1px solid rgba(255, 255, 255, 0.15);
-    border-radius: 999px;
-    background: transparent;
-    color: #B9D8E2;
-    font-family: inherit;
-    font-size: 0.8rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    cursor: pointer;
-    pointer-events: auto;
-    transition: background 0.18s ease;
-  }
-
-  .btn-ghost:hover {
-    background: rgba(255, 255, 255, 0.07);
-  }
-
-  .controls {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 10px 16px;
-    margin-top: 22px;
-    color: #8FB8C8;
-    font-size: 0.78rem;
-  }
-
-  .controls span {
-    display: inline-flex;
-    align-items: center;
-    gap: 7px;
-  }
-
-  .only-touch {
-    display: none;
-  }
-
-  .best-line {
-    margin: 22px 0 0;
-    color: #7FA8B9;
-    font-size: 0.72rem;
-    font-weight: 700;
-    letter-spacing: 0.08em;
-    text-transform: uppercase;
-  }
-
-  .best-line strong {
-    margin-left: 4px;
-    color: var(--mint);
-    font-size: 1rem;
-  }
-
-  .death-mark {
-    margin-bottom: 8px;
-    font-size: 2.4rem;
-    line-height: 1;
-    filter: drop-shadow(0 0 18px rgba(255, 122, 107, 0.5));
-  }
-
-  .modal-title {
-    margin: 0;
-    color: #F2FFFC;
-    font-size: clamp(1.5rem, 4vw, 2.05rem);
-    font-weight: 900;
-    letter-spacing: 0.02em;
-  }
-
-  .modal-sub {
-    margin: 8px 0 0;
-    color: #8FB8C8;
-    font-size: 0.84rem;
-  }
-
-  .result-grid {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr);
-    gap: 10px;
-    margin: 24px 0 4px;
-  }
-
-  .result-item {
-    padding: 14px 8px;
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    border-radius: 14px;
-    background: rgba(255, 255, 255, 0.04);
-  }
-
-  .result-item span {
-    display: block;
-    color: #7FA8B9;
-    font-size: 0.6rem;
-    font-weight: 800;
-    letter-spacing: 0.16em;
-  }
-
-  .result-item strong {
-    display: block;
-    margin-top: 4px;
-    color: #E9FFFB;
-    font-size: 1.55rem;
-    font-weight: 900;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .result-item.highlight strong {
-    color: var(--sun);
-  }
-
-  .record-badge {
-    display: inline-block;
-    margin-top: 14px;
-    padding: 6px 14px;
-    border: 1px solid rgba(255, 209, 102, 0.35);
-    border-radius: 999px;
-    background: rgba(255, 209, 102, 0.1);
-    color: var(--sun);
-    font-size: 0.7rem;
-    font-weight: 800;
-    letter-spacing: 0.1em;
-  }
-
-  /* ==========================================================
-     RESPONSIVE
-     ========================================================== */
-  @media (max-width: 620px) {
-    .hud-top-left {
-      top: 12px;
-      left: 12px;
-      gap: 8px;
-    }
-
-    .stats-card {
-      gap: 12px;
-      padding: 7px 12px;
-      border-radius: 12px;
-    }
-
-    .stat-value {
-      font-size: 1.2rem;
-    }
-
-    .stat-label {
-      font-size: 0.52rem;
-    }
-
-    .stat-divider {
-      height: 24px;
-    }
-
-    .icon-btn {
-      width: 38px;
-      border-radius: 11px;
-      font-size: 0.95rem;
-    }
-
-    .leaderboard {
-      top: 72px;
-      right: 12px;
-      width: 158px;
-      padding: 9px 10px;
-      border-radius: 13px;
-    }
-
-    .leaderboard h3 {
-      margin-bottom: 7px;
-      font-size: 0.55rem;
-    }
-
-    .leaderboard li {
-      gap: 6px;
-      padding: 4px 5px;
-      font-size: 0.7rem;
-    }
-
-    .leaderboard .rank {
-      width: 13px;
-    }
-
-    .minimap-wrap {
-      left: 12px;
-      bottom: 12px;
-    }
-
-    #minimap {
-      width: 106px;
-      height: 106px;
-      border-radius: 13px;
-    }
-
-    .minimap-label {
-      display: none;
-    }
-
-    .boost-btn {
-      right: 16px;
-      bottom: 20px;
-      width: 70px;
-      height: 70px;
-      font-size: 1.55rem;
-    }
-
-    .modal {
-      padding: 24px 18px;
-      border-radius: 22px;
-    }
-
-    .tagline {
-      font-size: 0.64rem;
-      letter-spacing: 0.12em;
-    }
-
-    .btn-main {
-      margin-top: 20px;
-      padding: 13px 34px;
-      font-size: 0.86rem;
-    }
-
-    .controls {
-      gap: 8px 12px;
-      margin-top: 18px;
-      font-size: 0.72rem;
-    }
-
-    .result-item strong {
-      font-size: 1.25rem;
-    }
-  }
-
-  @media (max-width: 380px) {
-    .leaderboard {
-      width: 146px;
-    }
-
-    .stats-card {
-      padding: 6px 9px;
-      gap: 9px;
-    }
-
-    .stat-value {
-      font-size: 1.05rem;
-    }
-
-    .logo {
-      font-size: 2.7rem;
-    }
-  }
-
-  @media (hover: none), (pointer: coarse) {
-    .boost-btn {
-      display: flex;
-    }
-
-    .hint {
-      display: none;
-    }
-
-    .only-desktop {
-      display: none;
-    }
-
-    .only-touch {
-      display: inline-flex !important;
-    }
-  }
-
-  @media (max-height: 620px) {
-    .logo {
-      font-size: 2.6rem;
-    }
-
-    .controls {
-      display: none;
-    }
-
-    .best-line {
-      margin-top: 12px;
-    }
-
-    .modal {
-      padding-top: 18px;
-      padding-bottom: 18px;
-    }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    *,
-    *::before,
-    *::after {
-      animation: none !important;
-      transition: none !important;
-    }
-  }
-
-  :focus-visible {
-    outline: 2px solid var(--mint);
-    outline-offset: 3px;
-  }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Snake Game</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #1a1a2e;
+            color: #fff;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        h1 {
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: #4ade80;
+            text-shadow: 0 0 10px rgba(74, 222, 128, 0.5);
+        }
+
+        .score-board {
+            font-size: 1.5rem;
+            margin-bottom: 15px;
+            font-weight: bold;
+        }
+
+        canvas {
+            background-color: #0f172a;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(255, 255, 255, 0.05);
+            border: 2px solid #334155;
+            border-radius: 8px;
+        }
+
+        .game-over {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(15, 23, 42, 0.95);
+            padding: 30px 50px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid #ef4444;
+            box-shadow: 0 0 30px rgba(239, 68, 68, 0.2);
+            display: none;
+            z-index: 10;
+        }
+
+        .game-over h2 {
+            color: #ef4444;
+            margin-top: 0;
+        }
+
+        .game-over p {
+            font-size: 1.2rem;
+        }
+
+        button {
+            background-color: #4ade80;
+            color: #0f172a;
+            border: none;
+            padding: 10px 20px;
+            font-size: 1rem;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: background 0.2s;
+            margin-top: 15px;
+        }
+
+        button:hover {
+            background-color: #22c55e;
+        }
+    </style>
 </head>
 <body>
-  <canvas id="game" aria-label="Sân chơi Snake IO"></canvas>
-  <div class="vignette"></div>
 
-  <!-- ================= HUD ================= -->
-  <div class="ui">
-    <div class="hud-top-left">
-      <div class="stats-card glass">
-        <div class="stat">
-          <span class="stat-label">ĐIỂM</span>
-          <strong class="stat-value" id="scoreVal">0</strong>
-        </div>
-        <div class="stat-divider"></div>
-        <div class="stat">
-          <span class="stat-label">ĐỘ DÀI</span>
-          <strong class="stat-value" id="lenVal">16</strong>
-        </div>
-      </div>
-      <button class="icon-btn" id="soundBtn" type="button" aria-label="Tắt âm thanh">🔊</button>
+    <h1>SNAKE.IO</h1>
+    <div class="score-board">Điểm: <span id="score">0</span></div>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+
+    <div class="game-over" id="gameOverScreen">
+        <h2>GAME OVER!</h2>
+        <p>Điểm của bạn: <span id="finalScore">0</span></p>
+        <button onclick="resetGame()">Chơi Lại</button>
     </div>
 
-    <aside class="leaderboard glass">
-      <h3><span>🏆</span> Bảng xếp hạng</h3>
-      <ol id="boardList"></ol>
-    </aside>
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        const scoreElement = document.getElementById('score');
+        const gameOverScreen = document.getElementById('gameOverScreen');
+        const finalScoreElement = document.getElementById('finalScore');
 
-    <div class="minimap-wrap">
-      <canvas id="minimap" width="300" height="300" aria-hidden="true"></canvas>
-      <span class="minimap-label">BẢN ĐỒ</span>
-    </div>
+        // Cấu hình game
+        const gridSize = 20; // Kích thước mỗi ô vuông (pixel)
+        const tileCount = canvas.width / gridSize; // Số ô trên bàn cờ (20x20)
 
-    <div class="hint glass">
-      <span><kbd>Chuột</kbd> rẽ hướng</span>
-      <span><kbd>Space</kbd> giữ để tăng tốc</span>
-      <span><kbd>P</kbd> dừng</span>
-    </div>
+        let snake = [];
+        let food = { x: 0, y: 0 };
+        let dx = 0;
+        let dy = 0;
+        let score = 0;
+        let gameLoop;
+        let isGameOver = false;
+        let speed = 120; // Tốc độ (ms), càng nhỏ càng nhanh
 
-    <button class="boost-btn" id="boostBtn" type="button" aria-label="Tăng tốc">⚡</button>
-  </div>
+        // Khởi tạo game
+        function initGame() {
+            snake = [
+                { x: 10, y: 10 },
+                { x: 10, y: 11 },
+                { x: 10, y: 12 }
+            ];
+            dx = 0;
+            dy = -1; // Ban đầu đi lên
+            score = 0;
+            scoreElement.innerText = score;
+            isGameOver = false;
+            gameOverScreen.style.display = 'none';
+            generateFood();
+            
+            if (gameLoop) clearInterval(gameLoop);
+            gameLoop = setInterval(update, speed);
+        }
 
-  <!-- ================= BẮT ĐẦU ================= -->
-  <div id="startScreen" class="overlay">
-    <div class="modal">
-      <h1 class="logo">SNAKE<span>IO</span></h1>
-      <p class="tagline">NUỐT TÁO · DÀI RA · THỐNG TRỊ BẢN ĐỒ</p>
-      <button id="playBtn" class="btn-main" type="button">CHƠI NGAY</button>
-      <div class="controls">
-        <span class="only-desktop"><kbd>Chuột</kbd> rẽ hướng</span>
-        <span class="only-desktop"><kbd>Space</kbd> tăng tốc</span>
-        <span class="only-desktop"><kbd>P</kbd> tạm dừng</span>
-        <span class="only-touch">👆 Kéo để rẽ hướng</span>
-        <span class="only-touch">⚡ Giữ nút để tăng tốc</span>
-      </div>
-      <p class="best-line">Kỷ lục của bạn <strong id="bestVal">0</strong></p>
-    </div>
-  </div>
+        // Tạo thức ăn ngẫu nhiên
+        function generateFood() {
+            food.x = Math.floor(Math.random() * tileCount);
+            food.y = Math.floor(Math.random() * tileCount);
+            // Đảm bảo thức ăn không rơi vào thân rắn
+            for (let part of snake) {
+                if (part.x === food.x && part.y === food.y) {
+                    generateFood();
+                    return;
+                }
+            }
+        }
 
-  <!-- ================= GAME OVER ================= -->
-  <div id="overScreen" class="overlay hidden">
-    <div class="modal">
-      <div class="death-mark">💥</div>
-      <h2 class="modal-title">BẠN ĐÃ GỤC NGÃ</h2>
-      <p class="modal-sub">Đừng để đầu chạm vào thân rắn khác nhé!</p>
-      <div class="result-grid">
-        <div class="result-item">
-          <span>ĐIỂM</span>
-          <strong id="finalScore">0</strong>
-        </div>
-        <div class="result-item">
-          <span>ĐỘ DÀI</span>
-          <strong id="finalLen">0</strong>
-        </div>
-        <div class="result-item highlight">
-          <span>HẠNG</span>
-          <strong id="finalRank">#1</strong>
-        </div>
-      </div>
-      <div id="recordBadge" class="record-badge hidden">🏆 KỶ LỤC MỚI</div>
-      <p class="best-line">Kỷ lục của bạn <strong id="bestVal2">0</strong></p>
-      <button id="restartBtn" class="btn-main" type="button">CHƠI LẠI</button>
-      <button id="menuBtn" class="btn-ghost" type="button">VỀ MENU</button>
-    </div>
-  </div>
+        // Cập nhật trạng thái game (chạy liên tục)
+        function update() {
+            if (isGameOver) return;
 
-  <!-- ================= TẠM DỪNG ================= -->
-  <div id="pauseScreen" class="overlay hidden">
-    <div class="modal modal-sm">
-      <h2 class="modal-title">TẠM DỪNG</h2>
-      <p class="modal-sub">Thư giãn một chút...</p>
-      <button id="resumeBtn" class="btn-main" type="button">TIẾP TỤC</button>
-      <button id="quitBtn" class="btn-ghost" type="button">VỀ MENU</button>
-    </div>
-  </div>
+            // Tính toán vị trí đầu rắn mới
+            const head = { x: snake[0].x + dx, y: snake[0].y + dy };
 
-<script>
-(() => {
-  'use strict';
+            // Kiểm tra va chạm với tường
+            if (head.x < 0 || head.x >= tileCount || head.y < 0 || head.y >= tileCount) {
+                endGame();
+                return;
+            }
 
-  /* ==========================================================
-     DOM
-     ========================================================== */
-  const canvas = document.getElementById('game');
-  const ctx = canvas.getContext('2d', { alpha: false });
-  const minimap = document.getElementById('minimap');
-  const mctx = minimap.getContext('2d');
+            // Kiểm tra va chạm với chính mình
+            for (let i = 0; i < snake.length; i++) {
+                if (head.x === snake[i].x && head.y === snake[i].y) {
+                    endGame();
+                    return;
+                }
+            }
 
-  const scoreEl = document.getElementById('scoreVal');
-  const lenEl = document.getElementById('lenVal');
-  const boardEl = document.getElementById('boardList');
-  const soundBtn = document.getElementById('soundBtn');
-  const boostBtn = document.getElementById('boostBtn');
+            // Thêm đầu mới vào mảng
+            snake.unshift(head);
 
-  const startScreen = document.getElementById('startScreen');
-  const overScreen = document.getElementById('overScreen');
-  const pauseScreen = document.getElementById('pauseScreen');
+            // Kiểm tra ăn mồi
+            if (head.x === food.x && head.y === food.y) {
+                score += 10;
+                scoreElement.innerText = score;
+                generateFood(); // Tạo mồi mới
+                // Không pop() ở đây để rắn dài ra
+            } else {
+                // Nếu không ăn mồi, cắt bỏ phần đuôi
+                snake.pop();
+            }
 
-  const playBtn = document.getElementById('playBtn');
-  const restartBtn = document.getElementById('restartBtn');
-  const resumeBtn = document.getElementById('resumeBtn');
-  const menuBtn = document.getElementById('menuBtn');
-  const quitBtn = document.getElementById('quitBtn');
+            draw();
+        }
 
-  const bestEl = document.getElementById('bestVal');
-  const bestOverEl = document.getElementById('bestVal2');
-  const finalScoreEl = document.getElementById('finalScore');
-  const finalLenEl = document.getElementById('finalLen');
-  const finalRankEl = document.getElementById('finalRank');
-  const recordBadge = document.getElementById('recordBadge');
+        // Vẽ mọi thứ lên màn hình
+        function draw() {
+            // Xóa màn hình
+            ctx.fillStyle = '#0f172a';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  /* ==========================================================
-     HẰNG SỐ
-     ========================================================== */
-  const WORLD = { w: 4600, h: 4600 };
-  const GRID = 100;
-  const FOOD_TARGET = 620;
-  const BOT_TARGET = 9;
-  const START_LEN = 16;
-  const BASE_SPEED = 215;
-  const BOOST_SPEED = 352;
-  const MAX_LEN = 420;
-  const TAU = Math.PI * 2;
+            // Vẽ thức ăn (Màu đỏ)
+            ctx.fillStyle = '#ef4444';
+            ctx.shadowBlur = 10;
+            ctx.shadowColor = '#ef4444';
+            ctx.fillRect(food.x * gridSize, food.y * gridSize, gridSize - 2, gridSize - 2);
 
-  const BOT_COLORS = [
-    { c: '#FF7A6B', c2: '#B91C3C' },
-    { c: '#A78BFA', c2: '#6D28D9' },
-    { c: '#FFD166', c2: '#B45309' },
-    { c: '#38BDF8', c2: '#0369A1' },
-    { c: '#34D399', c2: '#047857' },
-    { c: '#F472B6', c2: '#BE185D' },
-    { c: '#FB923C', c2: '#C2410C' },
-    { c: '#60A5FA', c2: '#1D4ED8' },
-    { c: '#FACC15', c2: '#A16207' },
-    { c: '#2DD4BF', c2: '#0F766E' }
-  ];
+            // Vẽ rắn
+            ctx.shadowBlur = 0; // Tắt bóng đổ cho rắn
+            for (let i = 0; i < snake.length; i++) {
+                // Đầu rắn màu sáng hơn, thân rắn màu tối hơn chút
+                ctx.fillStyle = i === 0 ? '#4ade80' : '#22c55e';
+                ctx.fillRect(snake[i].x * gridSize, snake[i].y * gridSize, gridSize - 2, gridSize - 2);
+            }
+        }
 
-  const BOT_NAMES = [
-    'Mamba', 'Neon', 'Bolt', 'Viper', 'Pixel', 'Nova',
-    'Comet', 'Zigzag', 'Rắn Lục', 'Sấm Sét', 'Băng Hà', 'Hắc Long'
-  ];
+        // Kết thúc game
+        function endGame() {
+            isGameOver = true;
+            clearInterval(gameLoop);
+            finalScoreElement.innerText = score;
+            gameOverScreen.style.display = 'block';
+        }
 
-  /* ==========================================================
-     TRẠNG THÁI
-     ========================================================== */
-  let W = 0, H = 0, DPR = 1;
-  let state = 'menu'; // menu | playing | paused | dead
-  let snakes = [];
-  let foods = [];
-  let particles = [];
-  let floaters = [];
-  let respawns = [];
-  let player = null;
+        // Reset game
+        function resetGame() {
+            initGame();
+        }
 
-  const cam = { x: WORLD.w / 2, y: WORLD.h / 2, zoom: 1, shake: 0 };
+        // Xử lý sự kiện bàn phím
+        document.addEventListener('keydown', (e) => {
+            // Ngăn không cho cuộn trang khi chơi
+            if (["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", "w", "a", "s", "d"].includes(e.key)) {
+                e.preventDefault();
+            }
 
-  const keys = Object.create(null);
-  const pointer = { x: 0, y: 0 };
-  let inputMode = 'mouse';
-  let mouseBoost = false;
-  let touchBoost = false;
+            // Không cho rắn quay đầu 180 độ
+            if ((e.key === 'ArrowUp' || e.key === 'w') && dy !== 1) { dx = 0; dy = -1; }
+            if ((e.key === 'ArrowDown' || e.key === 's') && dy !== -1) { dx = 0; dy = 1; }
+            if ((e.key === 'ArrowLeft' || e.key === 'a') && dx !== 1) { dx = -1; dy = 0; }
+            if ((e.key === 'ArrowRight' || e.key === 'd') && dx !== -1) { dx = 1; dy = 0; }
+        });
 
-  let time = 0;
-  let lastTs = 0;
-  let best = 0;
-  let newBest = false;
-  let finalRank = 1;
-  let uiClock = 0;
-  let miniClock = 0;
-  let deadShown = false;
-  let deathTimer = 0;
-
-  let worldBg = null;
-  let decor = [];
-  let appleSprite = null;
-  let goldenSprite = null;
-
-  /* ==========================================================
-     TIỆN ÍCH
-     ========================================================== */
-  const rand = (a, b) => a + Math.random() * (b - a);
-  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
-
-  function angleDelta(a, b) {
-    let d = b - a;
-    while (d > Math.PI) d -= TAU;
-    while (d < -Math.PI) d += TAU;
-    return d;
-  }
-
-  const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (ch) => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
-  }[ch]));
-
-  function baseZoom() {
-    return W < 900 ? 0.94 : 1.06;
-  }
-
-  function viewBounds() {
-    const hw = W / (2 * cam.zoom) + 140;
-    const hh = H / (2 * cam.zoom) + 140;
-    return {
-      left: cam.x - hw,
-      right: cam.x + hw,
-      top: cam.y - hh,
-      bottom: cam.y + hh
-    };
-  }
-
-  function roundRectPath(c, x, y, w, h, r) {
-    c.beginPath();
-    c.moveTo(x + r, y);
-    c.arcTo(x + w, y, x + w, y + h, r);
-    c.arcTo(x + w, y + h, x, y + h, r);
-    c.arcTo(x, y + h, x, y, r);
-    c.arcTo(x, y, x + w, y, r);
-    c.closePath();
-  }
-
-  /* ==========================================================
-     ÂM THANH
-     ========================================================== */
-  const sfx = {
-    ctx: null,
-    muted: false,
-
-    init() {
-      if (this.ctx) {
-        if (this.ctx.state === 'suspended') this.ctx.resume();
-        return;
-      }
-      const AC = window.AudioContext || window.webkitAudioContext;
-      if (AC) this.ctx = new AC();
-    },
-
-    tone(freq, endFreq, dur, type, vol, delay) {
-      if (this.muted || !this.ctx) return;
-      const t0 = this.ctx.currentTime + (delay || 0);
-      const osc = this.ctx.createOscillator();
-      const gain = this.ctx.createGain();
-      osc.type = type;
-      osc.frequency.setValueAtTime(freq, t0);
-      osc.frequency.exponentialRampToValueAtTime(
-        Math.max(20, endFreq),
-        t0 + dur
-      );
-      gain.gain.setValueAtTime(0.0001, t0);
-      gain.gain.exponentialRampToValueAtTime(vol, t0 + 0.
+        // Bắt đầu game
+        initGame();
+    </script>
+</body>
+</html>
