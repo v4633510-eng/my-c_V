@@ -124,3 +124,9 @@ text
 2. Bạn nhớ thay `your-username` và `your-repo-name` trong phần hướng dẫn Clone thành link GitHub thật của bạn nhé.
 3. Nếu bạn có ảnh chụp màn hình giao diện trang web, hãy upload ảnh đó vào thư mục `assets/img/` và thêm dòng `![Giao diện Portfolio](./assets/img/screenshot.png)` ngay dưới dòng giới thiệu để file README sinh động hơn.
 
+## Giao diện ứng dụng
+
+Dưới đây là giao diện màn hình chính:
+
+![Giao diện trang chủ](docs/screenshots/home.png)
+![Mô tả ảnh (hiển thị khi ảnh lỗi)](đường_dẫn_tới_ảnh)
