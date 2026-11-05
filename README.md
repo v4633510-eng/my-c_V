@@ -129,4 +129,3 @@ text
 Dưới đây là giao diện màn hình chính:
 
 ![Giao diện trang chủ](docs/screenshots/home.png)
-![Mô tả ảnh (hiển thị khi ảnh lỗi)](đường_dẫn_tới_ảnh)
