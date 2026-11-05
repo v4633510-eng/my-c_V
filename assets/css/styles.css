@@ -702,4 +702,8 @@ ul {
     transition: none !important;
     scroll-behavior: auto !important;
   }
+  .tag-list li {
+    color: #D4AF37 !important; /* Màu vàng kim */
+    font-weight: 600; /* In đậm lên một chút cho dễ đọc */
+}
 }
